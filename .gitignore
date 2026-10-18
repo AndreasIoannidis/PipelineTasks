@@ -1,0 +1,32 @@
+# Virtual environments
+.venv/
+venv/
+env/
+.env/
+
+# Bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+
+# Local env files
+.env
+.env.*
+
+# macOS
+.DS_Store
