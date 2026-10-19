@@ -1,0 +1,19 @@
+# ClusterIP Service that gives the task-api Pods a stable in-cluster address.
+apiVersion: v1
+kind: Service
+metadata:
+  # Name used by other workloads to reach this Service.
+  name: task-api
+spec:
+  # Keep the Service reachable only inside the cluster.
+  type: ClusterIP
+  selector:
+    # Send traffic to Pods created by the task-api Deployment.
+    app: task-api
+  ports:
+    - name: http
+      # Port clients use on the Service.
+      port: 80
+      # Port on the container that receives the traffic.
+      targetPort: 8000
+      protocol: TCP

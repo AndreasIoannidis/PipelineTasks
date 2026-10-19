@@ -1,0 +1,50 @@
+# Deployment that keeps a set of task-api Pods running.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # Name used to find and update this Deployment.
+  name: task-api
+spec:
+  # Run two Pods so a local demo still has a spare replica.
+  replicas: 2
+  selector:
+    # Match Pods that carry this label.
+    matchLabels:
+      app: task-api
+  template:
+    metadata:
+      # Label applied to every Pod created by this Deployment.
+      labels:
+        app: task-api
+    spec:
+      containers:
+        - name: task-api
+          # Local image; Kind can load this tag without pulling from a registry.
+          image: task-api:0.1.0
+          # Use the image already present on the node instead of pulling it.
+          imagePullPolicy: IfNotPresent
+          ports:
+            # Port uvicorn listens on inside the container.
+            - containerPort: 8000
+          # Stop sending traffic to this Pod until /health succeeds.
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          # Restart the container if /health keeps failing.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          # Small CPU and memory amounts that fit a local Kind cluster.
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
