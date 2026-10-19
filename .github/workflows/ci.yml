@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      # Fetch the repository so tests run against this commit.
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      # Install Python 3.12 on the runner.
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      # Install the pinned project dependencies.
+      - name: Install requirements
+        run: pip install -r requirements.txt
+
+      # Run the test suite quietly.
+      - name: Run tests
+        run: pytest -q
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      # Fetch the repository so the Docker build has the Dockerfile and app.
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      # Build the image locally and tag it with this commit; do not push it.
+      - name: Build Docker image
+        run: docker build -t task-api:${{ github.sha }} .
