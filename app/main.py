@@ -1,3 +1,5 @@
+import threading
+
 from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel, Field
 
@@ -7,6 +9,8 @@ app = FastAPI()
 # In-memory store keyed by the server-assigned task id.
 tasks: dict[int, "Task"] = {}
 _next_id = 1
+# Sync routes run in a thread pool, so id assignment must be locked.
+_store_lock = threading.Lock()
 
 
 class TaskCreate(BaseModel):
@@ -32,22 +36,25 @@ def health() -> dict[str, str]:
 def create_task(payload: TaskCreate) -> Task:
     # Assign the next integer id and keep the task in memory.
     global _next_id
-    task = Task(id=_next_id, title=payload.title, done=False)
-    tasks[_next_id] = task
-    _next_id += 1
-    return task
+    with _store_lock:
+        task = Task(id=_next_id, title=payload.title, done=False)
+        tasks[_next_id] = task
+        _next_id += 1
+        return task
 
 
 @app.get("/tasks")
 def list_tasks() -> list[Task]:
     # Return every stored task; the list is empty when none exist.
-    return list(tasks.values())
+    with _store_lock:
+        return list(tasks.values())
 
 
 @app.delete("/tasks/{task_id}", status_code=204)
 def delete_task(task_id: int) -> Response:
     # Remove the task if it exists; otherwise return 404.
-    if task_id not in tasks:
-        raise HTTPException(status_code=404, detail="Task not found")
-    del tasks[task_id]
+    with _store_lock:
+        if task_id not in tasks:
+            raise HTTPException(status_code=404, detail="Task not found")
+        del tasks[task_id]
     return Response(status_code=204)
