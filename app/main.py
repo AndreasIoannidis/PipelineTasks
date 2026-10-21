@@ -2,6 +2,7 @@ import threading
 
 from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel, Field
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 # Create the FastAPI application instance for pipelinetasks.
 app = FastAPI()
@@ -58,3 +59,10 @@ def delete_task(task_id: int) -> Response:
             raise HTTPException(status_code=404, detail="Task not found")
         del tasks[task_id]
     return Response(status_code=204)
+
+
+
+@app.get("/metrics")
+def metrics():
+    # Returns the metrics in the plain-text format that Prometheus reads
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
