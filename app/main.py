@@ -2,10 +2,23 @@ import threading
 
 from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel, Field
-from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, generate_latest
 
 # Create the FastAPI application instance for pipelinetasks.
 app = FastAPI()
+
+# Counts every HTTP request, labelled by method and response status
+REQUEST_COUNT = Counter("http_requests_total", "Total HTTP requests", ["method", "status"])
+
+
+@app.middleware("http")
+async def count_requests(request, call_next):
+    # Runs for every request: let the request through, then count it
+    response = await call_next(request)
+    # Do not count the /metrics scrapes themselves, only the task traffic
+    if request.url.path != "/metrics":
+        REQUEST_COUNT.labels(method=request.method, status=str(response.status_code)).inc()
+    return response
 
 # In-memory store keyed by the server-assigned task id.
 tasks: dict[int, "Task"] = {}
