@@ -87,7 +87,7 @@ AI coding assistants (Cursor and Roo Code) were used to write parts of the code.
 
 ```bash
 # Clone the repository
-git clone https://github.com/<your-username>/PipelineTasks.git
+git clone https://github.com/AndreasIoannidis/PipelineTasks.git
 cd PipelineTasks
 
 # Create and activate a virtual environment
